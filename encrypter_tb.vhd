@@ -98,15 +98,14 @@ BEGIN
       wait for clock_period*10;
 
       KeyS <= '1';
-		
-		Input <= "00000001";
-		wait for clock_period;
-		Input <= "00000010";
-		wait for clock_period;
-		Input <= "00000011";
-		wait for clock_period;
-		
-		KeyS <= '0';
+      Input <= "00000001";
+      wait for clock_period;
+      Input <= "00000010";
+      wait for clock_period;
+      Input <= "00000011";
+      wait for clock_period;
+	  KeyS <= '0';
+      
 		
       wait;
    end process;

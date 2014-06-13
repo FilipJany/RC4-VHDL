@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.numeric_std.ALL;
+use ieee.std_logic_arith.all;
+
 
 --Component's task is to encrypt given input text with given key
 --Input:
@@ -14,7 +15,9 @@ use IEEE.numeric_std.ALL;
 --*Output - bity wyjscia - szyfrogramu
 
 entity encrypter is
-	generic (maxLen: integer := 7);
+	generic (maxLen: integer := 7;
+                io_period : integer := 9
+            );
 	port(
 		clock: in std_logic;--0/1, zegar
 		KeyS: in std_logic;--0/1, rozpoczyna przessylanie klucza
@@ -28,45 +31,22 @@ entity encrypter is
 end encrypter;
 
 architecture Behavioral of encrypter is
-type state is (INIT, READ_KEY, KSA, IN_READY, IN_PROCESS);
+type state is (INIT, READ_KEY, KSA, IN_PROCESS, ARRRESET);
 signal next_state, c_state: state;
 
+--Sygnaly wewnetrzne
 shared variable busy_internal: boolean;
-type Arr is array (255 downto 0) of integer;
-shared variable key : Arr;
-shared variable S : Arr; 
+--Zmienne obslugujace rejestry wew i pobor danych
+type Arr is array (255 downto 0) of std_logic_vector(maxLen downto 0);
+shared variable key : Arr:=(others =>(others => '0'));
+shared variable S : Arr:=(others =>(others => '0')); 
 shared variable iter: integer:= 0;
-shared variable actualSign: integer;
-
-procedure SaveData(inp:in integer) is
-begin
-	key(iter) := inp;
-	iter := iter + 1;
-end SaveData;
-
-procedure KSA(dummy: in integer) is
-variable i: integer;
-variable j: integer;
-begin
-	for i in 0 to 255 loop
-		S(i) := i;
-	end loop;
-	j := 0;
-	for i in 0 to 255 loop
-		j := (j + S(i) + key(i mod iter)) mod 256;
-	end loop;
-end KSA;
-
-function to_uint(v: std_logic_vector) return integer is
-begin
-	if v'length = 0 then
-		return 0;
-	elsif v'length = 1 then
-      return to_integer(unsigned(v));
-	else
-      return to_integer(signed(v));
-   end if;
-end;
+--Zmienne potrzebne do KSA
+shared variable i: integer := 0;
+shared variable j: integer := 0;
+shared variable temp: std_logic_vector(maxLen downto 0);
+--Zmienna sterujaca czasem
+shared variable clocks : integer := 0;
 
 begin
 	state_manager : process(clock, KeyS, TxtS, c_state, Input)--zarzadza stanami w komponencie
@@ -74,21 +54,20 @@ begin
 		Busy <= '0';
 		OutReady <= '0';
 		Output <= "00000000";
-		next_state <= INIT;--na poczatku wszystko w outpucie jest rowne 0, oraz stan poczatkowy to INIT
+		next_state <= ARRRESET;--na poczatku wszystko w outpucie jest rowne 0, oraz stan poczatkowy to INIT
 		
 		case c_state is
 		
 			when INIT =>--jezeli nic nie robil
-				iter := 0;
 				if (KeyS = '1' and TxtS = '0') then--i dostal sygnal do czytania klucza
 					next_state <= READ_KEY;
 					--czytaj klucz
 				elsif (KeyS = '0' and TxtS = '1') then--i dostal sygnal do cztyania tesktu
-					next_state <= INIT;
+					next_state <= ARRRESET;
 					busy_internal := False;
 					--czekaj az ktos poda klucz
 				else
-					next_state <= INIT;--w przeciwnum razie sa 2 sytuacje
+					next_state <= ARRRESET;--w przeciwnum razie sa 2 sytuacje
 					--1 - oba maja stan 0, wtedy nic nie rob 
 					--2 - oba maja stan 1, wtedy dajemy reset! i wszystko 
 					busy_internal := False;
@@ -96,11 +75,21 @@ begin
 				
 			when READ_KEY =>--jezeli czytasz klucz
 				if (KeyS = '1' and TxtS = '0') then--to dopoki sie nie zmieni flaga - czytaj
-					if (iter > 2 ) then
+					if (iter > 255 ) then
 						next_state <= KSA;
 						busy_internal := True;--ustaw ze jestes zajety
 					else
-						SaveData(to_uint(Input));
+						--####################save data in array
+						if(clocks > io_period) then
+                            clocks := 0;
+                        else
+                            if (clocks = 0) then
+                                key(iter) := Input;
+                                iter := iter + 1;
+                            end if;
+                            clocks := clocks + 1;
+                        end if;
+						--####################save data in array end
 						next_state <= READ_KEY;
 						--czytaj klucz
 					end if;
@@ -112,44 +101,68 @@ begin
 					busy_internal := True;
 					next_state <= KSA;
 				else
-					next_state <= INIT;
+					next_state <= ARRRESET;
 					busy_internal := False;
 				end if;
 				
 			when KSA =>
-				KSA(0);
+				--#KSA#######################################################
+                for i in 0 to 255 loop
+                    S(i) := conv_std_logic_vector(i, 8);
+                end loop;
+                j := 0;
+                for i in 0 to 255 loop
+                    j := (j + conv_integer(unsigned(S(i))) + conv_integer(unsigned(key(i mod iter)))) mod 256;
+                    temp := S(j);
+                    S(j) := S(i);
+                    S(i) := temp;
+                    Output <= S(i);
+                end loop;
+				--#KSA End##################################################
 				Busy <= '0';
-				next_state <= IN_READY;--przejdz do nastepnego stanu po wykonaniu ksa
-				
-			when IN_READY =>
-				if (KeyS = '1' and TxtS = '1') then--jezeli oba ustawione to 
-					next_state <= INIT;--reset
-					busy_internal := False;
-				elsif (KeyS = '1' and TxtS = '0') then--jezeli ustawione czytanie kluczt
-					next_state <= READ_KEY;--to czytaj klucz
-				elsif (KeyS = '0' and TxtS = '1') then--jezeli ustawione czytanie tekstu
-					next_state <= IN_PROCESS;--to czytaj tekst
-				else--jezeli oba byly  = 0 to reset
-					next_state <= INIT;
-					busy_internal := False;
-				end if;
-				
+                busy_internal := FAlSe;
+				next_state <= IN_PROCESS;--przejdz do nastepnego stanu po wykonaniu ksa
+				iter := 0;
+                clocks := 0;
+                
 			when IN_PROCESS =>
 				if (KeyS = '1' and TxtS = '1') then--jezeli oba ustawione to 
-					next_state <= INIT;--reset
+					next_state <= ARRRESET;--reset
 					busy_internal := False;
 				elsif (KeyS = '1' and TxtS = '0') then--jezeli ustawione czytanie kluczt
-					iter := 0;
-					next_state <= READ_KEY;--to czytaj klucz
+					next_state <= ARRRESET;--to czytaj klucz
 				elsif (KeyS = '0' and TxtS = '1') then--jezeli ustawione czytanie tekstu
-					next_state <= IN_PROCESS;--to czytaj tekst
-				else--jezeli oba byly  = 0 to reset
-					next_state <= IN_READY;
-				busy_internal := True;
-				--czytaj dane
-				--szyfruj dane
-				busy_internal := False;
+                    if (clocks > io_period) then
+                        clocks := 0;--calkiem koniec
+                    elsif (clocks > 0) then
+                        if (clocks = 2) then
+                            OutReady <= '0';--koniec wzniesienia
+                        end if;
+                        clocks := clocks + 1;
+                    else
+                        Output <= (Input xor S(iter));--XOR
+                        iter := (iter + 1) mod 256;
+                        OutReady <= '1';
+                        clocks := clocks + 1;
+                    end if;
+                    next_state <= IN_PROCESS;--to czytaj tekst
+                else--jezeli oba byly  = 0 to reset
+					next_state <= IN_PROCESS;
+                    busy_internal := False;
 				end if;
+                
+            when ARRRESET =>
+                iter := 0;
+                clocks := 0;
+                key :=(others =>(others => '0'));
+                S :=(others =>(others => '0'));
+                
+                Output <= S(0);
+                Output <= S(1);
+                
+                Busy <= '1';
+                OutReady <= '0';
+                next_state <= INIT;
 				
 		end case;
 		if (busy_internal = True) then
@@ -158,8 +171,8 @@ begin
 			Busy <= '0';
 		end if;
 	end process;
-	
-	state_register : process (clock)
+    
+    state_register : process (clock)
 	begin
 		if (clock' event and clock='1') then
 			c_state <= next_state;
@@ -168,4 +181,3 @@ begin
 	end process;
   
 end Behavioral;
-
