@@ -68,7 +68,7 @@ ARCHITECTURE behavior OF encrypter_tb IS
  
 BEGIN
  
-	-- Instantiate the Unit Under Test (UUT)
+    -- Instantiate the Unit Under Test (UUT)
    uut: encrypter PORT MAP (
           clock => clock,
           KeyS => KeyS,
