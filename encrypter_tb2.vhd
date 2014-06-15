@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer:
 --
--- Create Date:   01:36:22 06/15/2014
+-- Create Date:   02:29:35 06/15/2014
 -- Design Name:   
--- Module Name:   C:/Users/Filip/Documents/Rc4-VHDL/rc4_vhdl_2/encrypter_tb.vhd
+-- Module Name:   C:/Users/Filip/Documents/Rc4-VHDL/rc4_vhdl_2/encrypter_tb2.vhd
 -- Project Name:  rc4_vhdl_2
 -- Target Device:  
 -- Tool versions:  
@@ -32,10 +32,10 @@ USE ieee.std_logic_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 --USE ieee.numeric_std.ALL;
  
-ENTITY encrypter_tb IS
-END encrypter_tb;
+ENTITY encrypter_tb2 IS
+END encrypter_tb2;
  
-ARCHITECTURE behavior OF encrypter_tb IS 
+ARCHITECTURE behavior OF encrypter_tb2 IS 
  
     -- Component Declaration for the Unit Under Test (UUT)
  
@@ -97,55 +97,42 @@ BEGIN
 
       wait for clock_period*10;
 
-      -- insert stimulus here
-TxtS<= '1';
-KeyS<='1';
-      wait for clock_period*10;
-TxtS<= '0';
-KeyS<='0';
-      wait for clock_period*10;
-
       -- insert stimulus here 
-	KeyS <= '1';
-	Input <= "01010000";--P
- 	wait for clock_period*10;
-	Input <= "01010010";--r
-	wait for clock_period*10;
-Input <= "01001111";--o
-wait for clock_period*10;
-Input <= "01010011";--s
-wait for clock_period*10;
-Input <= "01001001";--i
-wait for clock_period*10;
-Input <= "01001101";--m
-wait for clock_period*10;
-Input <= "01011001";--y
-wait for clock_period*10;
-Input <= "00100001";--!
-wait for clock_period*10;
-KeyS<='0';
+        --W 20355 ns konczy dla tego przypadku KSA
+        KeyS <= '1';
+        Input <= "01001011";--K
+        wait for clock_period*10;
+        Input <= "01100101";--e
+        wait for clock_period*10;
+        Input <= "01111001";--y
+        wait for clock_period*10;
+        
+        KeyS<='0';
 
-wait for clock_period*2000;
+        wait for clock_period*2500;
 
-TxtS<='1';
-Input <= "01010000";--P
-wait for clock_period*22;
-Input <= "01000001";--a
-wait for clock_period*22;
-Input <= "01001110";--n
-wait for clock_period*22;
-Input <= "01000100";--d
-wait for clock_period*22;
-Input <= "01000001";--a
-wait for clock_period*22;
-Input <= "00100000";-- 
-wait for clock_period*22;
-Input <= "00110101";--5
-wait for clock_period*22;
-Input <= "00100001";--!
-wait for clock_period*22;      
-TxtS <= '0';
-
+        TxtS<='1';
+        Input <= "01010000";--P
+        wait for clock_period*22;
+        Input <= "01101100";--l
+        wait for clock_period*22;
+        Input <= "01100001";--a
+        wait for clock_period*22;
+        Input <= "01101001";--i
+        wait for clock_period*22;
+        Input <= "01101110";--n
+        wait for clock_period*22;
+        Input <= "01110100";--t
+        wait for clock_period*22;
+        Input <= "01100101";--e
+        wait for clock_period*22;
+        Input <= "01111000";--x
+        wait for clock_period*22;
+        Input <= "01110100";--t
+        wait for clock_period*22;
+        TxtS <= '0';       
+        
+        
       wait;
    end process;
 
