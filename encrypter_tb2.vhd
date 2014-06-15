@@ -98,7 +98,7 @@ BEGIN
       wait for clock_period*10;
 
       -- insert stimulus here 
-
+        --W 20355 ns konczy dla tego przypadku KSA
         KeyS <= '1';
         Input <= "01001011";--K
         wait for clock_period*10;
@@ -109,28 +109,28 @@ BEGIN
         
         KeyS<='0';
 
-wait for clock_period*2000;
+        wait for clock_period*2500;
 
-TxtS<='1';
-Input <= "01010000";--P
-wait for clock_period*22;
-Input <= "01101100";--P
-wait for clock_period*22;
-Input <= "01100001";--P
-wait for clock_period*22;
-Input <= "01101001";--P
-wait for clock_period*22;
-Input <= "01101110";--P
-wait for clock_period*22;
-Input <= "01110100";--P
-wait for clock_period*22;
-Input <= "01100101";--P
-wait for clock_period*22;
-Input <= "01111000";--P
-wait for clock_period*22;
-Input <= "01110100";--P
-wait for clock_period*22;
-TxtS <= '0';       
+        TxtS<='1';
+        Input <= "01010000";--P
+        wait for clock_period*22;
+        Input <= "01101100";--l
+        wait for clock_period*22;
+        Input <= "01100001";--a
+        wait for clock_period*22;
+        Input <= "01101001";--i
+        wait for clock_period*22;
+        Input <= "01101110";--n
+        wait for clock_period*22;
+        Input <= "01110100";--t
+        wait for clock_period*22;
+        Input <= "01100101";--e
+        wait for clock_period*22;
+        Input <= "01111000";--x
+        wait for clock_period*22;
+        Input <= "01110100";--t
+        wait for clock_period*22;
+        TxtS <= '0';       
         
         
       wait;

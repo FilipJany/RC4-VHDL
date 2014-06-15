@@ -161,7 +161,7 @@ begin
                         next_state := ARRRESET;
                     else 
                         --Output <= conv_std_logic_vector(22, 8);
-                        if (clocks < 1536) then
+                        if (clocks < 2048) then--1536 -> zapomnielismy zwiekszyc :P zmienilismy mod z 6 na 8 a tu nie
                             if ((clocks mod 8) = 0) then
                                 --Output <= conv_std_logic_vector((clocks mod 5), 8);
                                 sblockMode <= '1';--czytanie
@@ -213,14 +213,15 @@ begin
                     elsif (KeyS = '0' and TxtS = '1') then--jezeli ustawione czytanie tekstu
                         if (clocks > (io_period+12)) then
                             clocks := -1;--calkiem koniec
-                        elsif (clocks > 12) then
+                        elsif (clocks > 11) then--(clocks > 12) then
                             if (clocks = 14) then
                                 OutReady <= '0';--koniec wzwodu:P
                             end if;
-                        elsif ((clocks mod 12) = 0) then
+                        elsif ((clocks mod 12) = 0) then--wejde tu z clocks = 12, a nie chce
                             i := (i + 1) mod 256;
                             sblockMode <= '1';
                             sblockIndex <= conv_std_logic_vector(i, 8);--S[i]
+                            --Output <= conv_std_logic_vector(i, 8);--i
                         elsif ((clocks mod 12) = 2) then
                             j := (j + conv_integer(unsigned(sblockOutValue))) mod 256;--j = j + s[i] 0+2takty
                         elsif ((clocks mod 12) = 3) then
@@ -238,7 +239,7 @@ begin
                             sblockMode <= '1';--czytamy
                             sblockIndex <= conv_std_logic_vector((conv_integer(unsigned(sblockOutValue)) + conv_integer(unsigned(temp)) mod 256),8); -- ostawienie indeksu odczytu
                         elsif ((clocks mod 12) = 11) then
-                            Output <= (sblockOutValue); --xor Input);--XOR 0+2takty
+                            Output <= (sblockOutValue xor Input);--XOR 0+2takty
                             OutReady <= '1';
                         end if;
                         
